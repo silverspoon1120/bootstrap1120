@@ -1,7 +1,7 @@
 /*!
  * Jasny Bootstrap v3.1.3 (http://jasny.github.io/bootstrap)
- * Copyright 2012-2016 Arnold Daniels
- * Licensed under  ()
+ * Copyright 2012-2014 Arnold Daniels
+ * Licensed under Apache-2.0 (https://github.com/jasny/bootstrap/blob/master/LICENSE)
  */
 
 if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScript requires jQuery') }
@@ -40,7 +40,7 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
     return false // explicit for ie8 (  ._.)
   }
 
-  if ($.support.transition !== undefined) return  // Prevent conflict with vanilla Bootstrap
+  if ($.support.transition !== undefined) return  // Prevent conflict with Twitter Bootstrap
 
   // http://blog.alexmaccaw.com/css-transitions
   $.fn.emulateTransitionEnd = function (duration) {
@@ -92,10 +92,8 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
       $(window).on('resize', $.proxy(this.recalc, this))
     }
 
-    if (this.options.autohide && !this.options.modal) {
-      var eventName = (navigator.userAgent.match(/(iPad|iPhone)/i) === null) ? 'click' : 'touchstart'
-      $(document).on('click touchstart', $.proxy(this.autohide, this))
-    }
+    if (this.options.autohide)
+      $(document).on('click', $.proxy(this.autohide, this))
 
     if (this.options.toggle) this.toggle()
 
@@ -200,7 +198,7 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
 
   OffCanvas.prototype.disableScrolling = function() {
     var bodyWidth = $('body').width()
-    var prop = 'padding-right'
+    var prop = 'padding-' + this.opposite(this.placement)
 
     if ($('body').data('offcanvas-style') === undefined) {
       $('body').data('offcanvas-style', $('body').attr('style') || '')
@@ -217,8 +215,7 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
     }
     //disable scrolling on mobiles (they ignore overflow:hidden)
     $('body').on('touchmove.bs', function(e) {
-      if (!$(event.target).closest('.offcanvas').length)
-        e.preventDefault();
+      e.preventDefault();
     });
   }
 
@@ -248,12 +245,11 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
     }
 
     elements.addClass('canvas-sliding').each(function() {
-      var $this = $(this)
-      if ($this.data('offcanvas-style') === undefined) $this.data('offcanvas-style', $this.attr('style') || '')
-      if ($this.css('position') === 'static') $this.css('position', 'relative')
-      if (($this.css(placement) === 'auto' || $this.css(placement) === '0px') &&
-          ($this.css(opposite) === 'auto' || $this.css(opposite) === '0px')) {
-        $this.css(placement, 0)
+      if ($(this).data('offcanvas-style') === undefined) $(this).data('offcanvas-style', $(this).attr('style') || '')
+      if ($(this).css('position') === 'static') $(this).css('position', 'relative')
+      if (($(this).css(placement) === 'auto' || $(this).css(placement) === '0px') &&
+          ($(this).css(opposite) === 'auto' || $(this).css(opposite) === '0px')) {
+        $(this).css(placement, 0)
       }
     })
 
@@ -330,7 +326,6 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
       if (doAnimate) this.$backdrop[0].offsetWidth // force reflow
 
       this.$backdrop.addClass('in')
-      this.$backdrop.on('click.bs', $.proxy(this.autohide, this))
 
       doAnimate ?
         this.$backdrop
@@ -383,8 +378,6 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
 
   OffCanvas.prototype.autohide = function (e) {
     if ($(e.target).closest(this.$element).length === 0) this.hide()
-    var target = $(e.target);
-    if (!target.hasClass('dropdown-backdrop') && $(e.target).closest(this.$element).length === 0) this.hide()
   }
 
   // OFFCANVAS PLUGIN DEFINITION
@@ -421,12 +414,12 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
   $(document).on('click.bs.offcanvas.data-api', '[data-toggle=offcanvas]', function (e) {
     var $this   = $(this), href
     var target  = $this.attr('data-target')
+        || e.preventDefault()
         || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') //strip for ie7
     var $canvas = $(target)
     var data    = $canvas.data('bs.offcanvas')
     var option  = data ? 'toggle' : $this.data()
 
-    e.preventDefault();
     e.stopPropagation()
 
     if (data) data.toggle()
@@ -954,7 +947,6 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
 
     if (files.length === 0) {
       this.clear()
-      this.$element.trigger('clear.bs.fileinput')
       return
     }
 
@@ -1041,7 +1033,7 @@ if (typeof jQuery === 'undefined') { throw new Error('Jasny Bootstrap\'s JavaScr
     if (this.original.exists) this.$element.addClass('fileinput-exists').removeClass('fileinput-new')
      else this.$element.addClass('fileinput-new').removeClass('fileinput-exists')
 
-    this.$element.trigger('reseted.bs.fileinput')
+    this.$element.trigger('reset.bs.fileinput')
   },
 
   Fileinput.prototype.trigger = function(e) {
