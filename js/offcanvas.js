@@ -38,6 +38,12 @@
       $(document).on('click touchstart', $.proxy(this.autohide, this))
     }
 
+    // Backdrop is added to dropdown on it's open, if device is touchable (or desctop FF, https://github.com/twbs/bootstrap/issues/13748)
+    // and dropdown is not inside .navbar-nav. So we remove it
+    $(this.$element).on('shown.bs.dropdown', $.proxy(function(e) {
+        $(this.$element).find('.dropdown .dropdown-backdrop').remove()
+    }, this))
+
     if (this.options.toggle) this.toggle()
 
     if (this.options.disablescrolling) {
@@ -53,14 +59,6 @@
     recalc: true,
     disableScrolling: true,
     modal: false
-  }
-
-  OffCanvas.prototype.setWidth = function () {
-    var size = this.$element.outerWidth()
-    var max = $(window).width()
-    max -= 68 //Minimum space between menu and screen edge
-
-    this.$element.css('width', size > max ? max : size)
   }
 
   OffCanvas.prototype.offset = function () {
@@ -183,9 +181,7 @@
     if (startEvent.isDefaultPrevented()) return
 
     this.state = 'slide-in'
-    this.$element.css('width', '')
-    this.calcPlacement()
-    this.setWidth()
+    this.calcPlacement();
 
     var elements = this.getCanvasElements()
     var placement = this.placement
