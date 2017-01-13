@@ -27,7 +27,6 @@
     this.options  = $.extend({}, OffCanvas.DEFAULTS, options)
     this.state    = null
     this.placement = null
-    this.$calcClone = null
 
     if (this.options.recalc) {
       this.calcClone()
@@ -54,6 +53,14 @@
     recalc: true,
     disableScrolling: true,
     modal: false
+  }
+
+  OffCanvas.prototype.setWidth = function () {
+    var size = this.$element.outerWidth()
+    var max = $(window).width()
+    max -= 68 //Minimum space between menu and screen edge
+
+    this.$element.css('width', size > max ? max : size)
   }
 
   OffCanvas.prototype.offset = function () {
@@ -176,7 +183,9 @@
     if (startEvent.isDefaultPrevented()) return
 
     this.state = 'slide-in'
-    this.calcPlacement();
+    this.$element.css('width', '')
+    this.calcPlacement()
+    this.setWidth()
 
     var elements = this.getCanvasElements()
     var placement = this.placement
@@ -302,16 +311,10 @@
   }
 
   OffCanvas.prototype.calcClone = function() {
-    this.$calcClone = $('.offcanvas-clone')
-
-    if (!this.$calcClone.length) {
-      this.$calcClone = this.$element.clone()
-        .addClass('offcanvas-clone')
-        .appendTo($('body'))
-        .html('')
-    }
-
-    this.$calcClone.removeClass('in')
+    this.$calcClone = this.$element.clone()
+      .html('')
+      .addClass('offcanvas-clone').removeClass('in')
+      .appendTo($('body'))
   }
 
   OffCanvas.prototype.recalc = function () {
