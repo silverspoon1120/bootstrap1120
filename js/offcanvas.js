@@ -199,7 +199,7 @@
     })
 
     if (this.options.disableScrolling) this.disableScrolling()
-    if (this.options.modal || this.options.backdrop) this.toggleBackdrop()
+    if (this.options.modal) this.toggleBackdrop()
 
     var complete = function () {
       if (this.state != 'slide-in') return
@@ -246,7 +246,7 @@
     }
 
     if (this.options.disableScrolling) this.enableScrolling()
-    if (this.options.modal || this.options.backdrop) this.toggleBackdrop()
+    if (this.options.modal) this.toggleBackdrop()
 
     elements.removeClass('canvas-slid').addClass('canvas-sliding')
 
@@ -261,25 +261,12 @@
   }
 
   OffCanvas.prototype.toggleBackdrop = function (callback) {
-    callback = callback || $.noop
-    var time = 150
-
+    callback = callback || $.noop;
     if (this.state == 'slide-in') {
-      var doAnimate = $.support.transition
+      var doAnimate = $.support.transition;
 
       this.$backdrop = $('<div class="modal-backdrop fade" />')
-      if (this.options.backdrop) {
-        this.$backdrop.addClass('allow-navbar')
-
-        if (this.options.canvas && $(this.options.canvas)[0] !== $('body')[0]) {
-          $(this.options.canvas).addClass('limit-backdrop')
-          this.$backdrop.appendTo(this.options.canvas)
-        } else {
-          this.$backdrop.insertAfter(this.$element)
-        }
-      } else {
-        this.$backdrop.insertAfter(this.$element)
-      }
+      .insertAfter(this.$element);
 
       if (doAnimate) this.$backdrop[0].offsetWidth // force reflow
 
@@ -289,7 +276,7 @@
       doAnimate ?
         this.$backdrop
         .one($.support.transition.end, callback)
-        .emulateTransitionEnd(time) :
+        .emulateTransitionEnd(150) :
         callback()
     } else if (this.state == 'slide-out' && this.$backdrop) {
       this.$backdrop.removeClass('in');
@@ -302,18 +289,11 @@
             callback()
             self.$backdrop = null;
           })
-        .emulateTransitionEnd(time);
+        .emulateTransitionEnd(150);
       } else {
         this.$backdrop.remove();
         this.$backdrop = null;
         callback();
-      }
-
-      if (this.options.canvas && $(this.options.canvas)[0] !== $('body')[0]) {
-        var canvas = this.options.canvas
-        setTimeout(function() {
-          $(canvas).removeClass('limit-backdrop')
-        }, time)
       }
     } else if (callback) {
       callback()
