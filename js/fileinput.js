@@ -165,7 +165,7 @@
   },
 
   Fileinput.prototype.trigger = function(e) {
-    this.$input.focus().trigger('click')
+    this.$input.trigger('click')
     e.preventDefault()
   }
 
