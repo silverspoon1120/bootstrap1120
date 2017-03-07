@@ -21,7 +21,7 @@
 
   // OFFCANVAS PUBLIC CLASS DEFINITION
   // =================================
-  var isIphone = (navigator.userAgent.match(/iPhone/i)) || (navigator.userAgent.match(/iPod/i))
+
   var OffCanvas = function (element, options) {
     this.$element = $(element)
     this.options  = $.extend({}, OffCanvas.DEFAULTS, options)
@@ -124,7 +124,7 @@
     var canvas = this.options.canvas ? $(this.options.canvas) : this.$element
 
     var fixed_elements = canvas.find('*').filter(function() {
-      return $(this).css('position') === 'fixed'
+      return getComputedStyle(this).getPropertyValue('position') === 'fixed'
     }).not(this.options.exclude)
 
     return canvas.add(fixed_elements)
@@ -163,10 +163,6 @@
     }
 
     $('body').css('overflow', 'hidden')
-    //Fix iPhone scrolling
-    if (isIphone) {
-      $('body').addClass('lockIphone');
-    }
 
     if ($('body').width() > bodyWidth) {
       var padding = parseInt($('body').css(prop), 10) + $('body').width() - bodyWidth
@@ -184,7 +180,6 @@
 
   OffCanvas.prototype.enableScrolling = function() {
     $('body').off('touchmove.bs');
-    $('body').removeClass('lockIphone');
   }
 
   OffCanvas.prototype.show = function () {
@@ -213,7 +208,7 @@
     elements.addClass('canvas-sliding').each(function() {
       var $this = $(this)
       if ($this.data('offcanvas-style') === undefined) $this.data('offcanvas-style', $this.attr('style') || '')
-      if ($this.css('position') === 'static' && !isIphone) $this.css('position', 'relative')
+      if ($this.css('position') === 'static') $this.css('position', 'relative')
       if (($this.css(placement) === 'auto' || $this.css(placement) === '0px') &&
           ($this.css(opposite) === 'auto' || $this.css(opposite) === '0px')) {
         $this.css(placement, 0)
