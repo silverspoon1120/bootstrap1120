@@ -27,7 +27,7 @@
   var Fileinput = function (element, options) {
     this.$element = $(element)
 
-    this.options = options;
+    this.options = $.extend({}, Fileinput.DEFAULTS, options)
     this.$input = this.$element.find(':file')
     if (this.$input.length === 0) return
 
@@ -51,6 +51,11 @@
     }
 
     this.listen()
+    this.reset()
+  }
+
+  Fileinput.DEFAULTS = {
+    clearName: true
   }
 
   Fileinput.prototype.listen = function() {
@@ -61,12 +66,37 @@
     this.$element.find('[data-dismiss="fileinput"]').on('click.bs.fileinput', $.proxy(this.clear, this))
   },
 
+  Fileinput.prototype.verifySizes = function(files) {
+    if (typeof this.options.maxSize === 'undefined') return true
+
+    var max = parseFloat(this.options.maxSize)
+    if (max !== this.options.maxSize) return true
+
+    for (var i = 0; i < files.length; i++) {
+      var size = typeof files[i].size !== 'undefined' ? files[i].size : null
+      if (size === null) continue
+
+      size = size / 1000 / 1000 /* convert from bytes to MB */
+      if (size > max) return false
+    }
+
+    return true
+  }
+
   Fileinput.prototype.change = function(e) {
     var files = e.target.files === undefined ? (e.target && e.target.value ? [{ name: e.target.value.replace(/^.+\\/, '')}] : []) : e.target.files
 
     e.stopPropagation()
 
     if (files.length === 0) {
+      this.clear()
+      this.$element.trigger('clear.bs.fileinput')
+      return
+    }
+
+    if (!this.verifySizes(files)) {
+      this.$element.trigger('max_size.bs.fileinput')
+
       this.clear()
       this.$element.trigger('clear.bs.fileinput')
       return
@@ -222,7 +252,7 @@
 
     this.$hidden.val('')
     this.$hidden.attr('name', this.name)
-    this.$input.attr('name', '')
+    if (this.options.clearName) this.$input.attr('name', '')
 
     //ie8+ doesn't support changing the value of input with type=file so clone instead
     if (isIE) {
