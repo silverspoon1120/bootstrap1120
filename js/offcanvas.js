@@ -37,7 +37,7 @@
     if (this.options.autohide && !this.options.modal) {
       var eventName = (navigator.userAgent.match(/(iPad|iPhone)/i) === null) ? 'click' : 'touchstart'
       $(document).on('click touchstart', $.proxy(this.autohide, this))
-    }
+    }   
 
     // Backdrop is added to dropdown on it's open, if device is touchable (or desctop FF, https://github.com/twbs/bootstrap/issues/13748)
     // and dropdown is not inside .navbar-nav. So we remove it
@@ -49,7 +49,7 @@
         this.options.disableScrolling = this.options.disablescrolling
         delete this.options.disablescrolling
     }
-
+    
     if (this.options.toggle) this.toggle()
   }
 
@@ -59,9 +59,7 @@
     autohide: true,
     recalc: true,
     disableScrolling: true,
-    modal: false,
-    backdrop: false,
-    exclude: null
+    modal: false
   }
 
   OffCanvas.prototype.setWidth = function () {
@@ -381,10 +379,9 @@
   }
 
   OffCanvas.prototype.autohide = function (e) {
-    var $target = $(e.target);
-    var doHide = !$target.hasClass('dropdown-backdrop') && $target.closest(this.$element).length === 0;
-
-    if (doHide) this.hide()
+    if ($(e.target).closest(this.$element).length === 0) this.hide()
+    var target = $(e.target);
+    if (!target.hasClass('dropdown-backdrop') && $(e.target).closest(this.$element).length === 0) this.hide()
   }
 
   // OFFCANVAS PLUGIN DEFINITION
@@ -397,10 +394,6 @@
       var $this   = $(this)
       var data    = $this.data('bs.offcanvas')
       var options = $.extend({}, OffCanvas.DEFAULTS, $this.data(), typeof option === 'object' && option)
-
-      //In case if user does smth like $('.navmenu-fixed-left').offcanvas('hide'),
-      //thus selecting also menu clone (that can cause issues)
-      if ($this.hasClass('offcanvas-clone')) return
 
       if (!data) $this.data('bs.offcanvas', (data = new OffCanvas(this, options)))
       if (typeof option === 'string') data[option]()
