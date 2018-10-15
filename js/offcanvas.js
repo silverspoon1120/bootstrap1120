@@ -29,15 +29,16 @@
     this.placement = null
     this.$calcClone = null
 
+    this.calcClone()
+
     if (this.options.recalc) {
-      this.calcClone()
       $(window).on('resize', $.proxy(this.recalc, this))
     }
 
     if (this.options.autohide && !this.options.modal) {
       var eventName = (navigator.userAgent.match(/(iPad|iPhone)/i) === null) ? 'click' : 'touchstart'
       $(document).on('click touchstart', $.proxy(this.autohide, this))
-    }   
+    }
 
     // Backdrop is added to dropdown on it's open, if device is touchable (or desctop FF, https://github.com/twbs/bootstrap/issues/13748)
     // and dropdown is not inside .navbar-nav. So we remove it
@@ -49,7 +50,7 @@
         this.options.disableScrolling = this.options.disablescrolling
         delete this.options.disablescrolling
     }
-    
+
     if (this.options.toggle) this.toggle()
   }
 
@@ -59,7 +60,9 @@
     autohide: true,
     recalc: true,
     disableScrolling: true,
-    modal: false
+    modal: false,
+    backdrop: false,
+    exclude: null
   }
 
   OffCanvas.prototype.setWidth = function () {
@@ -198,51 +201,75 @@
     this.$element.trigger(startEvent)
     if (startEvent.isDefaultPrevented()) return
 
-    this.state = 'slide-in'
-    this.$element.css('width', '')
-    this.calcPlacement()
-    this.setWidth()
+    this.hideOthers($.proxy(function() {
+      this.state = 'slide-in'
+      this.$element.css('width', '')
+      this.calcPlacement()
+      this.setWidth()
 
-    var elements = this.getCanvasElements()
-    var placement = this.placement
-    var opposite = this.opposite(placement)
-    var offset = this.offset()
+      var elements = this.getCanvasElements()
+      var placement = this.placement
+      var opposite = this.opposite(placement)
+      var offset = this.offset()
 
-    if (elements.index(this.$element) !== -1) {
-      $(this.$element).data('offcanvas-style', $(this.$element).attr('style') || '')
-      this.$element.css(placement, -1 * offset)
-      this.$element.css(placement); // Workaround: Need to get the CSS property for it to be applied before the next line of code
-    }
-
-    elements.addClass('canvas-sliding').each(function() {
-      var $this = $(this)
-      if ($this.data('offcanvas-style') === undefined) $this.data('offcanvas-style', $this.attr('style') || '')
-      if ($this.css('position') === 'static' && !isIphone) $this.css('position', 'relative')
-      if (($this.css(placement) === 'auto' || $this.css(placement) === '0px') &&
-          ($this.css(opposite) === 'auto' || $this.css(opposite) === '0px')) {
-        $this.css(placement, 0)
+      if (elements.index(this.$element) !== -1) {
+        $(this.$element).data('offcanvas-style', $(this.$element).attr('style') || '')
+        this.$element.css(placement, -1 * offset)
+        this.$element.css(placement); // Workaround: Need to get the CSS property for it to be applied before the next line of code
       }
-    })
 
-    if (this.options.disableScrolling) this.disableScrolling()
-    if (this.options.modal || this.options.backdrop) this.toggleBackdrop()
+      elements.addClass('canvas-sliding').each(function() {
+        var $this = $(this)
+        if ($this.data('offcanvas-style') === undefined) $this.data('offcanvas-style', $this.attr('style') || '')
+        if ($this.css('position') === 'static' && !isIphone) $this.css('position', 'relative')
+        if (($this.css(placement) === 'auto' || $this.css(placement) === '0px') &&
+            ($this.css(opposite) === 'auto' || $this.css(opposite) === '0px')) {
+          $this.css(placement, 0)
+        }
+      })
 
-    var complete = function () {
-      if (this.state != 'slide-in') return
+      if (this.options.disableScrolling) this.disableScrolling()
+      if (this.options.modal || this.options.backdrop) this.toggleBackdrop()
 
-      this.state = 'slid'
+      var complete = function () {
+        if (this.state != 'slide-in') return
 
-      elements.removeClass('canvas-sliding').addClass('canvas-slid')
-      this.$element.trigger('shown.bs.offcanvas')
-    }
+        this.state = 'slid'
 
-    setTimeout($.proxy(function() {
-      this.$element.addClass('in')
-      this.slide(elements, offset, $.proxy(complete, this))
-    }, this), 1)
+        elements.removeClass('canvas-sliding').addClass('canvas-slid')
+        this.$element.trigger('shown.bs.offcanvas')
+      }
+
+      setTimeout($.proxy(function() {
+        this.$element.addClass('in')
+        this.slide(elements, offset, $.proxy(complete, this))
+      }, this), 1)
+    }, this));
   }
 
-  OffCanvas.prototype.hide = function (fast) {
+  //Hide other opened offcanvas menus, and then open this one
+  OffCanvas.prototype.hideOthers = function (callback) {
+    var doHide = false
+    var id = this.$element.attr('id')
+    var $clones = $('.offcanvas-clone:not([data-id="' + id + '"])')
+
+    if (!$clones.length) return callback()
+
+    $clones.each(function(index, clone) {
+      var id = $(clone).attr('data-id')
+      var $menu = $('#' + id)
+      doHide = $menu.hasClass('canvas-slid')
+
+      if (!doHide) return
+
+      $menu.one('hidden.bs.offcanvas', callback)
+      $menu.offcanvas('hide')
+    })
+
+    if (!doHide) callback()
+  }
+
+  OffCanvas.prototype.hide = function () {
     if (this.state !== 'slid') return
 
     var startEvent = $.Event('hide.bs.offcanvas')
@@ -348,11 +375,14 @@
   }
 
   OffCanvas.prototype.calcClone = function() {
-    this.$calcClone = $('.offcanvas-clone')
+    var id = this.$element.attr('id')
+    this.$calcClone = $('.offcanvas-clone[data-id="' + id + '"]')
 
     if (!this.$calcClone.length) {
       this.$calcClone = this.$element.clone()
         .addClass('offcanvas-clone')
+        .attr('data-id', id)
+        .removeAttr('id')
         .appendTo($('body'))
         .html('')
     }
@@ -379,9 +409,10 @@
   }
 
   OffCanvas.prototype.autohide = function (e) {
-    if ($(e.target).closest(this.$element).length === 0) this.hide()
-    var target = $(e.target);
-    if (!target.hasClass('dropdown-backdrop') && $(e.target).closest(this.$element).length === 0) this.hide()
+    var $target = $(e.target);
+    var doHide = !$target.hasClass('dropdown-backdrop') && $target.closest(this.$element).length === 0;
+
+    if (doHide) this.hide()
   }
 
   // OFFCANVAS PLUGIN DEFINITION
@@ -394,6 +425,10 @@
       var $this   = $(this)
       var data    = $this.data('bs.offcanvas')
       var options = $.extend({}, OffCanvas.DEFAULTS, $this.data(), typeof option === 'object' && option)
+
+      //In case if user does smth like $('.navmenu-fixed-left').offcanvas('hide'),
+      //thus selecting also menu clone (that can cause issues)
+      if ($this.hasClass('offcanvas-clone')) return
 
       if (!data) $this.data('bs.offcanvas', (data = new OffCanvas(this, options)))
       if (typeof option === 'string') data[option]()
@@ -421,7 +456,7 @@
         || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '') //strip for ie7
     var $canvas = $(target)
     var data    = $canvas.data('bs.offcanvas')
-    var option  = data ? 'toggle' : $this.data()
+    var option = data ? 'toggle' : $.extend($this.data(), $canvas.data())
 
     e.preventDefault();
     e.stopPropagation()
