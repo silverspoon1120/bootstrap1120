@@ -1,6 +1,5 @@
 {
   "name": "jasny-bootstrap",
-  "npmName": "jasny-bootstrap",
   "description": "Additional features and components for Bootstrap",
   "version": "3.2.0",
   "main": "./dist/js/jasny-bootstrap.js",
@@ -65,13 +64,5 @@
     "buildConfig": {
       "uglify": true
     }
-  },
-  "npmFileMap": [
-    {
-      "basePath": "dist",
-      "files": [
-        "**/*"
-      ]
-    }
-  ]
+  }
 }
