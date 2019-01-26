@@ -40,24 +40,6 @@
   overflow-y: auto;
   border-radius: 0;
 }
-
-.navmenu-fixed-left,
-.navmenu-fixed-right {
-  .dropdown .dropdown-menu {
-    position: static !important;
-    float: none;
-    transform: none !important;
-    background: rgba(0, 0, 0, .02);
-    border-left: none;
-    border-right: none;
-    border-radius: 0;
-
-    .nav-link {
-      padding: .35rem 1rem .35rem 1.3rem;
-    }
-  }
-}
-
 .navmenu-fixed-left,
 .navbar-offcanvas.navmenu-fixed-left {
   left: 0;
@@ -75,8 +57,7 @@
   margin-bottom: @navmenu-margin-vertical;
 
   &.dropdown-menu {
-    position: static!important;
-    transform: none!important;
+    position: static;
     margin: 0;
     padding-top: 0;
     float: none;

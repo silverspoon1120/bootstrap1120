@@ -18,6 +18,7 @@ module.exports = function (grunt) {
   var fs = require('fs');
   var path = require('path');
   var BsLessdocParser = require('./grunt/bs-lessdoc-parser.js');
+  var generateRawFilesJs = require('./grunt/bs-raw-files-generator.js');
   var updateShrinkwrap = require('./grunt/shrinkwrap.js');
 
   // Project configuration.
@@ -36,7 +37,8 @@ module.exports = function (grunt) {
     clean: {
       dist: ['dist', 'docs/dist'],
       jekyll: ['_gh_pages'],
-      assets: ['assets/css/*.min.css', 'assets/js/*.min.js']
+      assets: ['assets/css/*.min.css', 'assets/js/*.min.js'],
+      jade: ['jade/*.jade']
     },
 
     jshint: {
@@ -56,7 +58,7 @@ module.exports = function (grunt) {
         src: 'js/tests/unit/*.js'
       },
       assets: {
-        src: ['docs/assets/js/application.js']
+        src: ['docs/assets/js/application.js', 'docs/assets/js/customizer.js']
       }
     },
 
@@ -74,7 +76,7 @@ module.exports = function (grunt) {
         src: 'js/tests/unit/*.js'
       },
       assets: {
-        src: ['docs/assets/js/application.js']
+        src: ['docs/assets/js/application.js', 'docs/assets/js/customizer.js']
       }
     },
 
@@ -116,6 +118,21 @@ module.exports = function (grunt) {
         },
         src: '<%= concat.bootstrap.dest %>',
         dest: 'dist/js/<%= pkg.name %>.min.js'
+      },
+      customize: {
+        options: {
+          preserveComments: 'some'
+        },
+        src: [
+          'docs/assets/js/vendor/less.min.js',
+          'docs/assets/js/vendor/jszip.min.js',
+          'docs/assets/js/vendor/uglify.min.js',
+          'docs/assets/js/vendor/blob.js',
+          'docs/assets/js/vendor/filesaver.js',
+          'docs/assets/js/raw-files.min.js',
+          'docs/assets/js/customizer.js'
+        ],
+        dest: 'docs/assets/js/customize.min.js'
       },
       docsJs: {
         options: {
@@ -233,6 +250,24 @@ module.exports = function (grunt) {
       docs: {}
     },
 
+    jade: {
+      compile: {
+        options: {
+          pretty: true,
+          data: function () {
+            var filePath = path.join(__dirname, 'less/build/variables.less');
+            var fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
+            var parser = new BsLessdocParser(fileContent);
+            return { sections: parser.parseFile() };
+          }
+        },
+        files: {
+          'docs/_includes/customizer-variables.html': 'docs/jade/customizer-variables.jade',
+          'docs/_includes/nav-customize.html': 'docs/jade/customizer-nav.jade'
+        }
+      }
+    },
+
     validation: {
       options: {
         charset: 'utf-8',
@@ -311,7 +346,7 @@ module.exports = function (grunt) {
   var testSubtasks = [];
   // Skip core tests if running a different subset of the test suite
   if (!process.env.TWBS_TEST || process.env.TWBS_TEST === 'core') {
-    testSubtasks = testSubtasks.concat(['dist-css', 'csslint', 'jshint', 'qunit']);
+    testSubtasks = testSubtasks.concat(['dist-css', 'csslint', 'jshint', 'qunit', 'build-customizer-html']);
   }
   // Skip HTML validation if running a different subset of the test suite
   if (!process.env.TWBS_TEST || process.env.TWBS_TEST === 'validate-html') {
@@ -339,7 +374,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist', ['clean:dist', 'dist-css', 'dist-js', 'dist-docs']);
 
   // Default task.
-  grunt.registerTask('default', ['dist']);
+  grunt.registerTask('default', ['dist', 'build-customizer']);
 
   // Documentation task.
   grunt.registerTask('docs', ['jekyll', 'dist-docs']);
@@ -348,6 +383,14 @@ module.exports = function (grunt) {
   // grunt change-version-number --oldver=A.B.C --newver=X.Y.Z
   // This can be overzealous, so its changes should always be manually reviewed!
   grunt.registerTask('change-version-number', 'replace');
+
+  // task for building customizer
+  grunt.registerTask('build-customizer', ['build-customizer-html', 'build-raw-files']);
+  grunt.registerTask('build-customizer-html', 'jade');
+  grunt.registerTask('build-raw-files', 'Add scripts/less files to customizer.', function () {
+    var banner = grunt.template.process('<%= banner %>');
+    generateRawFilesJs(banner);
+  });
 
   // Task for updating the npm packages used by the Travis build.
   grunt.registerTask('update-shrinkwrap', ['exec:npmUpdate', 'exec:npmShrinkWrap', '∆update-shrinkwrap']);
